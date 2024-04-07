@@ -1,0 +1,41 @@
+#Ejemplo de correlación con libreria yfinance que se conecta con el sitio yahoo finance
+import yfinance as yf
+import pandas as pd
+import numpy as np
+
+tickers = ['CL=F', 'BZ=F', '^GSPC', 'BTC-USD', 'ETH-USD', '^TNX', '^MERV', '^VIX'] #(intc=intel corporation; AGNC= REAL STATE; BA=The boeing)
+precios = {} #Diccionario de precios
+i = 1
+for ticker in tickers:
+    print(f"descargando Los datos de : {ticker}) | Numero : {i}/{len(tickers)}")
+    precios[ticker] = yf.download(ticker, period = '10y')
+    i += 1
+
+print(precios[tickers[0]])
+
+#Para guardar solo los precios de cierre de cada mercado
+fechas = precios[tickers[0]].index
+dataframe_cierre = pd.DataFrame(index = fechas)
+for ticker in tickers:
+    dataframe_cierre[ticker] = precios[ticker]['Close']
+
+#Calculamos las correlaciones
+Correlations = dataframe_cierre.corr(method='pearson')
+
+#Grafico matriz de correlación
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+im = ax.imshow(Correlations)
+ax.set_xticks(np.arange(len(tickers)))
+ax.set_yticks(np.arange(len(tickers)))
+ax.set_xticklabels(tickers) 
+ax.set_yticklabels(tickers)
+plt.setp(ax.get_xticklabels(),rotation = 45,ha="right",rotation_mode="anchor")
+for i in range(len(tickers)):
+    for j in range(len(tickers)):
+        text = ax.text(j, i, round(Correlations.loc[tickers[i]][tickers[j]], 2), ha='center', va='center', color="black")
+
+ax.set_title("Mapa de calor de correlaciones. Ultimos 10 años")
+fig.tight_layout()#ajusta el relleno de cada parcela       
+plt.show()
