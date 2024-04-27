@@ -1,0 +1,72 @@
+import pandas as pd
+# 1. Leer el archivo CSV
+# Utilizar el método read_csv() para leer el archivo "datos.csv" y almacenarlo en una variable llamada df.
+
+df = pd.read_csv("datos.csv")
+
+# 2. Mostrar los primeros 5 registros
+# Utilizar el método head() para imprimir por consola los primeros 5 registros del DataFrame.
+
+print(df.head(5))
+
+# 3. Mostrar los últimos 5 registros
+# Utilizar el método tail() para imprimir por consola los últimos 5 registros del DataFrame.
+print("-------")
+
+print(df.tail(5))
+
+# 4. Mostrar la cantidad de filas y columnas
+# Utilizar el atributo shape para imprimir por consola la cantidad de filas y columnas del DataFrame.
+print("-------")
+
+df_shape = df.shape
+print("La forma de la tabla es:", df.shape)
+
+
+# 5. Mostrar la descripción estadística
+# Utilizar el método describe() para imprimir por consola la descripción estadística del DataFrame.
+print("-------")
+
+descripcion_df = df.describe()
+
+print("La descripción estadistica del DataFrame es:", descripcion_df)
+
+# 6. Filtrar los registros donde la columna "Producto" sea igual a "Naranja"
+# Utilizar el método loc() para obtener los registros donde la columna "Producto" sea igual a "Naranja" y almacenarlos en una variable llamada naranjas.
+# Imprimir por consola los registros obtenidos.
+print("-------")
+
+Naranjas = df.loc[df['Producto'] == "Naranja"]
+print(Naranjas)
+
+# 7. Filtrar los registros donde la columna "Precio" sea mayor a 10
+# Utilizar el método loc() para obtener los registros donde la columna "Precio" sea mayor a 10 y almacenarlos en una variable llamada precios_altos.
+# Imprimir por consola los registros obtenidos.
+print("-------")
+
+precios_altos = df.loc[df["Precio"] > 10]
+print(precios_altos)
+
+# 8. Filtrar los registros donde la columna "Cantidad" sea mayor a 10 y la columna "Precio" sea igual mayor a 10
+# Utilizar el método loc() para obtener los registros donde la columna "Cantidad" sea mayor a 10 y la columna "Precio" sea igual mayor a 10 y almacenarlos en una variable llamada filtro_cantidad_precio.
+# Imprimir por consola los registros obtenidos.
+print("-------")
+
+filtro_cantidad_precio = df.loc[(df["Cantidad"] > 10) & (df["Precio"] >= 10)]
+print(filtro_cantidad_precio)
+
+# 9. Eliminar la columna "Precio"
+# Utilizar el método drop() para eliminar la columna "Precio" del DataFrame.
+# Imprimir por consola el DataFrame resultante.
+print("-------")
+
+df2 = df.drop(columns=["Precio"])
+print(df2)
+
+# 10. Eliminar los registros donde se repita el valor de la columna "Producto"
+# Utilizar el método drop_duplicates() para eliminar los registros donde se repita el valor de la columna "Producto" del DataFrame.
+# Imprimir por consola el DataFrame resultante.
+print("-------")
+
+df_sin_duplicados = df.drop_duplicates(subset = ["Precio"])
+print(df_sin_duplicados)
