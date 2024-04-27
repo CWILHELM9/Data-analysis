@@ -1,0 +1,31 @@
+#VPN
+
+Tasa = 0.1
+Cash_flows = [-1000,50,50,50,50,50] ##Lista con inversion inicial y cupones
+
+VPN = 0
+VPN += (Cash_flows[0] / ((1+Tasa)**0) ) #Momento 0
+VPN += (Cash_flows[1] / ((1+Tasa)**1) ) #Momento 1
+VPN += (Cash_flows[2] / ((1+Tasa)**2) ) #Momento 2
+VPN += (Cash_flows[3] / ((1+Tasa)**3) ) #Momento 3
+VPN += (Cash_flows[4] / ((1+Tasa)**4) ) #Momento 4
+VPN += (Cash_flows[5] / ((1+Tasa)**5) ) #Momento 5
+print("El valor presente neto es:", VPN)
+
+#Loops:
+VPN_i = 0
+for i in range(len(Cash_flows)):
+    VPN_i += Cash_flows[i] / ((1+Tasa)**i)
+print("El valor presente neto es:", VPN_i)
+
+#Con numpy_financial y el comando npv
+import numpy as np
+import numpy_financial as npf
+
+VPN_np = npf.npv(Tasa, Cash_flows)
+print("El valor presente neto es:", VPN_np)
+
+#Estimación de TIR
+import numpy_financial as npf
+npf.irr([-250000, 100000, 150000, 200000, 250000, 300000])
+#0.5672303344358536
