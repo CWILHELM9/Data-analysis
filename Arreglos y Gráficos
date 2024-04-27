@@ -1,0 +1,195 @@
+# 1. Crear un array y obtener información sobre su forma y tamaño:
+# Enunciado: Crea un array de 2 dimensiones utilizando el método np.array() con los siguientes
+#   elementos: [1, 2, 3] y [4, 5, 6]. Luego, utiliza los métodos shape y size para obtener la 
+#   forma y el tamaño del array, respectivamente. Imprime la forma y el tamaño por consola.
+arr = np.array([[1, 2, 3], [4, 5, 6]])
+forma = arr.shape
+print("La forma de la matriz arr es de:", forma)
+
+tamaño = arr.size
+print("El tamaño de la matriz arr es:", tamaño)
+
+# 2. Realizar operaciones matemáticas con un array:
+# Enunciado: Crea un array utilizando el método np.array() con los siguientes elementos: [1, 2, 3, 4, 5]. 
+#   a) Utiliza la función np.square() para calcular el cuadrado de cada elemento del array. Imprime el resultado por consola.
+
+arreglo = np.array([1, 2, 3, 4, 5])
+cuadrado = np.square(arreglo[0])
+print("El cuadrado de cada elemento es:", cuadrado)
+
+#   b) Utiliza la función np.sqrt() para calcular la raíz cuadrada de cada elemento del array. Imprime el resultado por consola.
+
+raiz_cuadrada = np.sqrt(arreglo[0])
+print("La raíz cuadrada de cada elemeto es:", raiz_cuadrada)
+
+#   c) Utiliza la función np.sin() para calcular el seno de cada elemento del array. Imprime el resultado por consola.
+
+seno = np.sin(arreglo[0])
+print("El seno de cada elemento del arreglo es:", seno)
+
+#   d) Utiliza la función np.cos() para calcular el coseno de cada elemento del array. Imprime el resultado por consola.
+
+coseno = np.cos(arreglo[0])
+print("El coseno de cada elemento del arreglo es:", coseno)
+
+#   e) Utiliza la función np.tan() para calcular la tangente de cada elemento del array. Imprime el resultado por consola.
+
+tangente = np.tan(arreglo[0])
+print("La tangente de cada elemento del arreglo es:", tangente)
+
+# 3. Realizar operaciones matemáticas con dos arrays:
+# Enunciado: Crea dos arrays utilizando el método np.array() con los siguientes elementos: [1, 2, 3, 4, 5] y [6, 7, 8, 9, 10].
+#   a) Utiliza la función np.add() para sumar los elementos de ambos arrays. Imprime el resultado por consola.
+
+arr1 = np.array([1, 2, 3, 4, 5])
+arr2 = np.array([6, 7, 8, 9, 10])
+suma = np.add(arr1, arr2)
+print("La suma de los elementos de ambos arrays es:", suma)
+
+#   b) Utiliza la función np.subtract() para restar los elementos de ambos arrays. Imprime el resultado por consola.
+
+resta = np.subtract(arr1, arr2)
+print("El resultado de restar los elementos de ambos arrays es:", resta)
+
+#   c) Utiliza la función np.multiply() para multiplicar los elementos de ambos arrays. Imprime el resultado por consola.
+
+multiplicación = np.multiply(arr1, arr2)
+print("El resultado de multiplicar cada elemento de ambos arrays es:", multiplicación)
+
+#   d) Utiliza la función np.divide() para dividir los elementos de ambos arrays. Imprime el resultado por consola.
+división = np.divide(arr1, arr2)
+print("El resultado de dividir ambos arrays es:", división)
+
+#   e) Utiliza la función np.power() para elevar los elementos del primer array a los elementos del segundo array. Imprime el resultado por consola.
+potencia = np.power(arr1, arr2)
+print("El resultado de elevar a la potencia los elementos del primer array a los elementos del segundo array es:", potencia)
+
+# 4. Manipular los elementos de un array:
+# Enunciado: Crea un array utilizando el método np.array() con los siguientes elementos: [1, 2, 3, 4, 5].
+#   a) Utiliza el método np.reshape() para cambiar la forma del array a (5, 1). Imprime el resultado por consola.
+
+arr4 = np.array([1, 2, 3, 4, 5])
+cambio_de_forma = np.reshape(arr4, (5, 1))
+print("Si la matriz se transforma en una sola columna queda:", cambio_de_forma)
+
+#   b) Utiliza el método np.ravel() para cambiar la forma del array a (1, 5). Imprime el resultado por consola.
+
+arr4_trans = np.ravel(cambio_de_forma)
+print("Si la matriz se aplana, queda:", arr4_trans)
+
+#   c) Utiliza el método np.transpose() para cambiar la forma del array a (5, 1). Imprime el resultado por consola.
+
+transpone_ = np.transpose(arr4_trans)
+print(transpone_)
+
+#   d) Utiliza el método np.resize() para cambiar la forma del array a (3, 3). Imprime el resultado por consola.
+
+arr4_3x3 = np.resize(transpone_, (3, 3))
+print(arr4_3x3)
+
+
+#   e) Utiliza el método np.append() para agregar el elemento 6 al array. Imprime el resultado por consola.
+
+arr4_extendida = np.append(arr4, 6)
+print(arr4_extendida)
+
+
+
+## ACTIVIDADES CON MATPLOTLIB ##
+# Visite la documentación de Matplotlib para obtener más información sobre los métodos utilizados en esta actividad:
+# https://matplotlib.org/stable/api/index.html
+import matplotlib.pyplot as plt
+
+# 1. Crear un gráfico de líneas:
+# Enunciado: Crea un array utilizando el método np.array() con los siguientes elementos: [1, 2, 3, 4, 5].
+#   a) Crea un gráfico de líneas utilizando el método plt.plot().
+#   b) Utiliza el método plt.title() para agregar el título "Gráfico de líneas".
+#   c) Utiliza el método plt.xlabel() para agregar la etiqueta del eje x "Eje x".
+#   d) Utiliza el método plt.ylabel() para agregar la etiqueta del eje y "Eje y".
+#   e) Utiliza el método plt.show() para mostrar el gráfico.
+
+Arreglo1 = np.array([1, 2, 3, 4, 5]) 
+plt.plot(Arreglo1)
+plt.title("Gráfico de líneas")
+plt.xlabel("Eje x")
+plt.ylabel("Eje y")
+plt.show()
+
+
+# 2. Crear un gráfico de barras:
+# Enunciado: Crea un array utilizando el método np.array() con los siguientes elementos: [1, 2, 3, 4, 5].
+#   a) Crea un gráfico de barras utilizando el método plt.bar().
+#   b) Utiliza el método plt.title() para agregar el título "Gráfico de barras".
+#   c) Utiliza el método plt.xlabel() para agregar la etiqueta del eje x "Eje x".
+#   d) Utiliza el método plt.ylabel() para agregar la etiqueta del eje y "Eje y".
+#   e) Utiliza el método plt.show() para mostrar el gráfico.
+
+Arreglo2 = np.array([1, 2, 3, 4, 5])
+plt.bar(Arreglo2, Arreglo2, color="red")
+plt.title("Gráfico de barras")
+plt.xlabel("Eje x")
+plt.ylabel("Eje y")
+plt.ylabel("Eje y")
+plt.show()
+
+# 3. Crear un gráfico de dispersión con un array de dos dimensiones:
+# Enunciado: Crea un array utilizando el método np.array() con los siguientes elementos: [[1, 2], [3, 4], [5, 6]].
+#   a) Crea un gráfico de dispersión utilizando el método plt.scatter().
+#   b) Utiliza el método plt.title() para agregar el título "Gráfico de dispersión 2D".
+#   c) Utiliza el método plt.xlabel() para agregar la etiqueta del eje x "Eje x".
+#   d) Utiliza el método plt.ylabel() para agregar la etiqueta del eje y "Eje y".
+#   e) Utiliza el método plt.show() para mostrar el gráfico.
+
+Arreglo3 = np.array([[1, 2], [3, 4], [5, 6]])
+
+plt.scatter(Arreglo3[:, 0], Arreglo3[:, 1])
+plt.title("Gráfico de dispersión 2D")
+plt.xlabel("Eje x")
+plt.ylabel("Eje y")
+plt.show() 
+
+
+# 4. Crear un gráfico de dispersión con un array de tres dimensiones:
+# Enunciado: Crea tres vectores de 100 elementos ALEATORIOS, usando rand() de np.random
+#   a) Crea una figura y un objeto de proyección 3D utilizando plt.subplots(subplot_kw={'projection': '3d'}).
+#   b) Utiliza el método scatter() del objeto de proyección para crear el gráfico de dispersión.
+#   c) Utiliza el método set_title() del objeto de proyección para agregar el título "Gráfico de dispersión 3D".
+#   d) Utiliza el método set_xlabel() del objeto de proyección para agregar la etiqueta del eje x "Eje x".
+#   e) Utiliza el método set_ylabel() del objeto de proyección para agregar la etiqueta del eje y "Eje y".
+#   f) Utiliza el método show() de plt para mostrar el gráfico.
+x = np.random.rand(100)
+y = np.random.rand(100)
+z = np.random.rand(100)
+
+fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
+
+ax.scatter(x, y, z)
+ax.set_title("Gráfico de dispersión 3D")
+ax.set_xlabel("Eje x") 
+ax.set_ylabel("Eje y")
+plt.show()
+
+
+# 5. Crear un gráfico de barras con dos arrays:
+# Enunciado: Crea dos arrays utilizando el método np.array() con los siguientes elementos: [1, 2, 3, 4, 5] y [6, 7, 8, 9, 10].
+#   a) Crea un gráfico de barras utilizando el método plt.bar().
+#   b) Utiliza el método plt.title() para agregar el título "Gráfico de barras".
+#   c) Utiliza el método plt.xlabel() para agregar la etiqueta del eje x "Eje x".
+#   d) Utiliza el método plt.ylabel() para agregar la etiqueta del eje y "Eje y"
+#   f) Utiliza el método plt.legend() para agregar la leyenda "Leyenda".
+#   g) Utiliza el método plt.xticks() para agregar las etiquetas del eje x "Eje x".
+#   h) Utiliza el método plt.yticks() para agregar las etiquetas del eje y "Eje y".
+#   i) Utiliza el método plt.grid() para agregar la grilla al gráfico.
+#   j) Utiliza el método plt.show() para mostrar el gráfico.
+x =  np.array([1, 2, 3, 4, 5])
+y = np.array([6, 7, 8, 9, 10])
+
+graf_barras = plt.bar(x, y)
+plt.title("Gráfico de barras")
+plt.xlabel("Eje x")
+plt.ylabel("Eje y")
+plt.legend()
+plt.xticks(x, ['Elemento 1', 'Elemento 2', 'Elemento 3', 'Elemento 4', 'Elemento 5'])
+plt.yticks(np.arange(0, 11, 1))
+plt.grid()
+plt.show()
