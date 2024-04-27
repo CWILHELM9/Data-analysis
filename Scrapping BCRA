@@ -1,0 +1,29 @@
+from bs4 import BeautifulSoup
+import requests # permite abrir una pagina sin abrirla en el explorador
+import pandas as pd
+from lxml import html
+
+## guia en YT: https://www.youtube.com/watch?v=yKi9-BfbfzQ&ab_channel=freeCodeCampEspa%C3%B1ol
+
+url = 'https://www.bna.com.ar/Personas' ##Siempre se crea una vble con la url base
+
+page = requests.get(url) ##Luego el metodo get
+
+url_obtenida = (page.text)##recupero el texto de la url
+
+soup = BeautifulSoup(page.content, 'html.parser') ##parsear es obtener le motor de la url
+
+Etiqueta = soup.find_all('td', limit= 3) ##find_ all trae todos los elementos (en este caso "td") de la pagina.
+
+print(Etiqueta)
+
+for seccion in Etiqueta: ##como el find_all trae un ciclo iterable, se puede hacer un bucle for para leer sólo el text
+    print(seccion.get_text(strip=True))##Con strip = true solo me quedo con el text y no con espacios
+
+##Almacenamiento:
+import csv
+
+datos = dict(zip(Etiqueta, Etiqueta)) #creamos un zip
+with open('datos.csv', 'w') as f: #se guardan los datos en un csv "datos"
+   w = csv.writer(f)
+   w.writerows(datos.items()) #el metodo item da los elementos del dict
