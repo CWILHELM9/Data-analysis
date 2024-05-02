@@ -13,9 +13,11 @@ url_obtenida = (page.text)##recupero el texto de la url
 
 soup = BeautifulSoup(page.content, 'html.parser') ##parsear es obtener le motor de la url
 
-Etiqueta = soup.find_all('td', limit= 3) ##find_ all trae todos los elementos (en este caso "td") de la pagina.
+Etiqueta = soup.find_all('td', limit= 42) ##find_ all trae todos los elementos (en este caso "td") de la pagina.
+#RVAS = soup.find_all('td style')
 
 print(Etiqueta)
+#print(RVAS)
 
 for seccion in Etiqueta: ##como el find_all trae un ciclo iterable, se puede hacer un bucle for para leer sólo el text
     print(seccion.get_text(strip=True))##Con strip = true solo me quedo con el text y no con espacios
@@ -24,6 +26,5 @@ for seccion in Etiqueta: ##como el find_all trae un ciclo iterable, se puede hac
 import csv
 
 datos = dict(zip(Etiqueta, Etiqueta)) #creamos un zip
-with open('datos.csv', 'w') as f: #se guardan los datos en un csv "datos"
+with open('Cotizaciones.csv', 'w') as f: #se guardan los datos en un csv "datos"
    w = csv.writer(f)
-   w.writerows(datos.items()) #el metodo item da los elementos del dict
