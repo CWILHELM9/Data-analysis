@@ -1,0 +1,45 @@
+import pandas as pd
+import csv
+import xlsxwriter
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+df = pd.read_excel('Liquidacion_Residencias_mayo.xlsx')
+print(df)
+
+print(df.describe)
+
+print(df.columns)
+
+df = df.drop(columns='COD_CONVENIO')
+
+provincia_df = df[['PROVINCIA', 'TOTAL_NETO']]
+print(provincia_df)
+
+#provincia_df.plot(kind = 'scatter', x = 'PROVINCIA', y = 'APELLIDO')
+
+x = (provincia_df.TOTAL_NETO)
+y = (provincia_df.PROVINCIA)
+
+
+#plt.plot(x, y)
+#plt.show()
+
+plt.scatter(x, y)
+plt.title("Gráfico de dispersión 2D")
+plt.xlabel("Eje x")
+plt.ylabel("Eje y")
+plt.show()
+
+df_group_prov = df(df.TOTAL_NETO), df.CUIL, df.groupby('PROVINCIA')
+print(df_group_prov)
+
+sns.boxplot(data = df_group_prov, orient= "h")
+plt.show()
+
+df_resume = df_group_prov['TOTAL_NETO'].mean()
+print(df_resume)
+
+df_resume_median = df_group_prov['TOTAL_NETO'].median()
+print(df_resume_median)
