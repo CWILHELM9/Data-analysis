@@ -1,0 +1,83 @@
+SELECT * FROM ventas;
+
+--Eliminamos los datos duplicados
+
+CREATE TABLE ventas2 AS
+SELECT *
+FROM ventas
+group by id_vendedor, id_prod, periodo;
+
+select * from ventas2;
+
+drop table ventas;
+
+alter table ventas2 rename to ventas;
+
+
+--Top 10 de vendedores
+SELECT v.nombre, ve.id_vendedor, sum(ve.Suma_de_unidades) as total_unidades
+FROM vendedores v
+JOIN ventas ve ON v.id = ve.id_vendedor
+GROUP BY v.nombre, ve.id_vendedor
+ORDER BY total_unidades DESC
+LIMIT 10;
+
+----Variación de ventas por vendedor
+SELECT 
+      v.nombre, 
+      sum(case when ve.periodo = 202203 THEN ve.Suma_de_unidades ELSE 0 END) as periodo_202203,
+      sum(case when ve.periodo = 202202 THEN ve.Suma_de_unidades ELSE 0 END) AS periodo_202202,
+      sum(CASE WHEN ve.periodo = 202203 then ve.Suma_de_unidades else 0 END) - 
+      sum(case when ve.periodo = 202202 then ve.Suma_de_unidades else 0 end) as Diferencia
+FROM vendedores v
+JOIN ventas ve ON v.id = ve.id_vendedor
+group by v.nombre;
+
+--Vendedores de Córdoba con mas de 200 perfumes vendidos
+SELECT
+       ve.id_vendedor,
+       ven.nombre,
+       ve.id_categoria,
+       p.provincia,
+       sum(ve.Suma_de_unidades) as total_unidades
+FROM ventas ve
+JOIN vendedores ven ON ven.id = ve.id_vendedor
+JOIN provincias p ON p.id = ven.id_provincia
+WHERE
+      p.provincia = 'CÓRDOBA'
+      AND ve.id_categoria = 'B01'
+GROUP BY 
+    p.provincia, ve.id_vendedor, ve.id_categoria
+HAVING 
+    SUM(ve.Suma_de_unidades) > 200;
+    
+    
+
+--BONUS TRACK Crea un stored procedure para mostrar las unidades vendidas por cada año ingresado
+ select * from provincias;
+ update provincias set id = '1' WHere id = '1-1';
+ update provincias set id = '20' WHere id = '20-1';
+ update provincias set provincia = 'SANTA FE' WHere PROVINCIA = 'ROSARIO';
+ update provincias set provincia = 'CABA' WHere PROVINCIA = 'CIUDAD AUTÓNOMA DE BUENOS AIRES';
+
+--Extrae los primeros 4 caracteres de string periodo
+ALTER TABLE VENTAS ADD COLUMN ANIO INT;
+UPDATE VENTAS SET ANIO = CAST(SUBSTRING(PERIODO, 1, 4) AS INT);
+
+drop PROCEDURE provinciasmenoresventas;
+DELIMITER //
+CREATE PROCEDURE ProvinciasMenoresVentas (in ANIO_param int)
+BEGIN
+        Select sum(ve.suma_de_unidades) as cantidades_vendidas,
+          p.id,
+          p.provincia
+    from ventas ve
+    JOIN vendedores ven on ven.id = ve.id_vendedor
+    JOIn provincias p ON p.id = ven.id_provincia
+    WHERE anio = anio_param
+    group by p.id, p.provincia
+    order by ve.suma_de_unidades asc
+    LIMIT 5;
+
+END //
+DELIMITER;
