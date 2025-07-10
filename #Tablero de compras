@@ -1,0 +1,762 @@
+#Tablero de compras
+
+USE Adquisiciones;
+SHOW TABLES FROM adquisiciones;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Monitoreo del PAC.csv'
+INTO TABLE monitoreo_del_pac
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+SELECT * FROM monitoreo_del_pac
+WHERE Numero_de_documento_GEDO != 'RC-2024-87627632-APN-SGA#MS'
+LIMIT 1500;
+
+#Crear nueva columna con identificación única de expedientes, donde traiga el número de expediente COMPRAR o de no tenerlo el inicial.
+#Quito tambien los Duplicados
+ALTER TABLE monitoreo_del_pac
+ADD COLUMN Num_de_exp VARCHAR(500);
+UPDATE monitoreo_del_pac
+SET Num_de_exp = REPLACE(
+                    CASE 
+                        WHEN Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC LIKE '%Sin información%' 
+                        THEN TRIM(Numero_de_expediente)
+                        ELSE Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC
+                    END,
+                    ' ', ''
+                );
+
+
+#ALTER TABLE monitoreo_del_pac
+#Cargamos la segunda tabla con el archivo 'Expedientes.csv' 
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Expedientes.csv'
+INTO TABLE Expedientes
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+SELECT * FROM expedientes limit 500000;
+
+#Unimos las tablas para no colapsar la consulta de exportacion
+#Sostenemos los exp abiertos y nos quedamos solo con algunas columnas del archivo Expedientes.
+#Unimos las tablas Monitoreo del PAC y Expedientes
+#Filtramos expedientes abiertos, creados por SGA, DGPFE, DCyC y DD desde 2021 y que no estén en DGACN de la tabla Expedientes
+
+##RESULTADO: Expedientes de adquisiciones. 
+#_________________________________________#
+
+#Próximos pasos, ver en qué etapa del proceso están y abrir por ítem.
+##ADQUISIONES POR MEDIO DE COMPR.AR
+#Cargamos la tabla con el archivo 'Detalle_Procesos_Compra'
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Detalle Procesos Compra.csv'
+INTO TABLE Detalle_Procesos_Compra
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+SELECT * FROM Detalle_Procesos_Compra;
+
+#Unimos las tablas mediante el Nro de expediente y nos quedamos con las columnas del Nro de proceso y Estado
+#Cargamos la tabla con el archivo 'Detalle_Procesos_Compra'
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Detalle solicitudes.csv'
+INTO TABLE Detalle_Solicitudes
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+SELECT * FROM Detalle_solicitudes limit 50000;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Items solicitados.csv'
+INTO TABLE Items_solicitados
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 2 ROWS;
+SELECT * FROM Items_solicitados limit 15000;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Documentos asociados a expedientes de compra.csv'
+INTO TABLE Documentos_vinculados_a_expedientes_de_compras
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Documentos vinculados a expedientes.csv'
+INTO TABLE Documentos_vinculados_a_expedientes
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Documentos vinculados a expedientes 2022.csv'
+INTO TABLE Documentos_vinculados_a_expedientes
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Documentos vinculados a expedientes 2023.csv'
+INTO TABLE Documentos_vinculados_a_expedientes
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\Documentos vinculados a expedientes 2024.csv'
+INTO TABLE Documentos_vinculados_a_expedientes
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+SELECT * FROM Documentos_vinculados_a_expedientes limit 1500000;
+
+drop table documentos_vinculados_a_expedientes;
+
+##PARA LOS EXPEDIENTES QUE TIENEN SCO (QUE SE TRAMITARON POR COMPRAR) SE REFERENCIA LA ETAPA EN LA QUE ESTÁN
+#ALTER TABLE Documentos_vinculados_a_expedientes
+#ADD COLUMN Estado_proceso text;
+
+#Detalle de solicitudes de contratacion. Unir número de proceso con núm de solicitud. (ELIMINÉ ESTA LINEA DEL CODIGO QUE EXPORTA)
+#qué pasa si se crea un procesamiento almacenado con esta vinculacion?
+
+#Detalle items solicitudes: Nos quedamos con columnas C-F.
+#Se unen los procedimientos almacenados, la idea es que despues de esta función ya se proceda a la exportacion
+#B. Otros expedientes. Se procesan los exp de acuerdo a la instancia en la que estan.
+#Se aproxima a esto mediante acronimos de documentos. Revisar acrónimos y clasificación. 
+
+#Filtrar por reparticiones y acrónimos (DGPFE, SGA, SSGA, DCyC, DD) o todo lo que no sea providencia.
+#Repetir consulta para las tablas de 2023,2022,2021
+
+#TABLA 2!!! FOWMC + EXPEDIENTE + Numero del proceso- NO OMITIR PORQUE PERMITE CONFIGURAR LAS UNIONES
+
+use adquisiciones;
+SELECT DISTINCT
+     TRIM(m.Num_de_exp),
+     COALESCE(dpc.nro_proceso, 'NO_COMPRAR') AS nro_proceso,
+     COALESCE(dpc.Estado_proceso, 'NO_COMPRAR') AS Estado_proceso,
+     e.Estado, 
+     e.Fecha_caratulacion, 
+     e.Reparticion_solicitante_GDE, 
+     e.Usuario_actual, 
+     e.Sector_actual, 
+     e.Reparticion_actual, 
+     e.Fecha_Ultimo_Pase,
+     m.Tipo_de_tramite,
+     m.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC,
+     m.Numero_de_documento_GEDO,
+     m.Secretaria,
+     m.Subsecretaria,
+     m.Direccion_General,
+     m.Direccion,
+     m.programa,
+     m.Nombre_del_proceso,
+     m.Numero_de_expediente,
+     m.Tipo_de_proceso,
+     m.Incluye_logistica,
+     m.Importe_Total,
+     m.Importe_total_moneda,
+     m.Previsto_en_el_plan_anual_de_compras,
+     m.Numero_de_linea_del_PAC,
+     m.Linea_POA,
+     m.Inciso,
+     m.Clase,
+     m.Rubro,
+     m.Fuente_de_financiamiento,
+     m.Modalidad_de_compra,
+     COALESCE(dpc.Nro_Proceso, 'NO_COMPRAR') AS Nro_Proceso
+FROM monitoreo_del_pac m
+    LEFT JOIN detalle_procesos_compra dpc ON m.Num_de_exp = dpc.Numero_expediente_electronico
+    LEFT JOIN expedientes e ON m.Num_de_exp = e.Expediente
+WHERE
+    m.Numero_de_documento_GEDO != 'RC-2024-87627632-APN-SGA#MS'
+  AND
+    e.Reparticion_Solicitante_GDE LIKE '%SSGA#MS - Subsecretaría de gestión administrativa%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%SGA#MS - Secretaría de gestión administrativa%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%DGPFE#MS - Dirección general de proyectos con financiamiento externo%'
+    OR e.Reparticion_solicitante_GDE LIKE '%DGPYPSYE#MS - Dirección general de programas y proyectos sectoriales y especiales%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%DCYC#MS - Dirección de compras y contrataciones%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%DD#MS - Dirección de despacho%'
+  AND (e.Fecha_caratulacion LIKE '%2021%' 
+        OR e.Fecha_caratulacion LIKE '%2022%' 
+        OR e.Fecha_caratulacion LIKE '%2023%' 
+        OR e.Fecha_caratulacion LIKE '%2024%'
+        OR e.Fecha_caratulacion LIKE '%2025%')
+  AND m.Num_de_exp = (
+    CASE 
+      WHEN m.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC LIKE "%Sin información%" 
+        THEN m.Numero_de_expediente
+      ELSE m.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC
+    END
+  )
+GROUP BY m.Num_de_exp
+LIMIT 5000;
+
+##tabla 3!!! FOWMC + NUMERO DE PROCESO Y NUMERO DE SOLICITUD CHEQUEADA. ESTA TABLA SE EXPORTA.
+## SON LOS EXPEDIENTES DE CONTRATACIONES CURSO. chequeadisimo
+
+SELECT
+     TRIM(m.Num_de_exp),
+     COALESCE(dpc.nro_proceso, 'NO_COMPRAR') AS nro_proceso,
+     COALESCE(dpc.Estado_proceso, 'NO_COMPRAR') AS Estado_proceso,
+     COALESCE(ds.nro_solicitud, 'SIN SCO') AS nro_solicitud,
+     e.Estado, 
+     e.Fecha_caratulacion, 
+     e.Reparticion_solicitante_GDE, 
+     e.Usuario_actual, 
+     e.Sector_actual, 
+     e.Reparticion_actual, 
+     e.Fecha_Ultimo_Pase,
+     m.Tipo_de_tramite,
+     m.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC,
+     m.Numero_de_documento_GEDO,
+     m.Secretaria,
+     m.Subsecretaria,
+     m.Direccion_General,
+     m.Direccion,
+     m.programa,
+     m.Nombre_del_proceso,
+     m.Numero_de_expediente,
+     m.Tipo_de_proceso,
+     m.Incluye_logistica,
+     m.Importe_Total,
+     m.Importe_total_moneda,
+     m.Previsto_en_el_plan_anual_de_compras,
+     m.Numero_de_linea_del_PAC,
+     m.Linea_POA,
+     m.Inciso,
+     m.Clase,
+     m.Rubro,
+     m.Fuente_de_financiamiento,
+     m.Modalidad_de_compra
+FROM monitoreo_del_pac m
+    LEFT JOIN detalle_procesos_compra dpc ON m.Num_de_exp = dpc.Numero_expediente_electronico
+    LEFT JOIN expedientes e ON m.Num_de_exp = e.Expediente
+    LEFT JOIN detalle_solicitudes ds ON dpc.Nro_Proceso = ds.Nro_proceso
+WHERE
+    m.Numero_de_documento_GEDO != 'RC-2024-87627632-APN-SGA#MS'
+  AND
+    e.Reparticion_Solicitante_GDE LIKE '%SSGA#MS - Subsecretaría de gestión administrativa%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%SGA#MS - Secretaría de gestión administrativa%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%DGPFE#MS - Dirección general de proyectos con financiamiento externo%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%DCYC#MS - Dirección de compras y contrataciones%' 
+    OR e.Reparticion_solicitante_GDE LIKE '%DD#MS - Dirección de despacho%'
+  AND (e.Fecha_caratulacion LIKE '%2021%' 
+        OR e.Fecha_caratulacion LIKE '%2022%' 
+        OR e.Fecha_caratulacion LIKE '%2023%' 
+        OR e.Fecha_caratulacion LIKE '%2024%')
+  AND m.Num_de_exp = (
+    CASE 
+      WHEN m.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC LIKE "%Sin información%" 
+        THEN m.Numero_de_expediente
+      ELSE m.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC
+    END
+  )
+GROUP BY m.Num_de_exp
+LIMIT 50000;
+
+
+##AHORA TRABAJAMOS CON LA TABLA DE EXPEDIENTES EN CURSO. CRUZAMOS LAS SCO.
+##TABLA FOWMC + Num de exp + Nro de proceso + Nro de solicitud con filtros con uniones con la tabla items solicitados pero sin levantar ningun dato de ahí.
+LOAD DATA LOCAL INFILE 'D:\\xampp\\mysql\\data\\Expedientes de adquisicion.csv'
+INTO TABLE Expedientes_de_adquisición
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+UPDATE expedientes_de_adquisición
+SET Nro_solicitud = RTRIM(Nro_solicitud);
+
+SELECT * FROM Expedientes_de_adquisición;
+
+SELECT * FROM Items_solicitados limit 5000;
+##OBTENEMOS LA SEGUNDA TABLA EXPORTABLE. DETALLE A NIVEL PRODUCTO DE LOS EXP EN CURSO CON SCO
+use adquisiciones;
+
+# para probar la query
+SELECT
+  ec.Num_de_exp,
+  ec.nro_proceso,
+  is_.Nro_solicitud,
+  ec.Estado_proceso,
+  ec.Estado
+FROM expedientes_de_adquisición ec
+  INNER JOIN items_solicitados is_ 
+    ON ec.Nro_solicitud LIKE CONCAT(is_.Nro_solicitud, '%');
+
+##USAR ESTA QUERY DESDE AHORA EN MAS (02/10)
+SELECT
+  ec.Num_de_exp,
+  ec.nro_proceso,
+  is_.Nro_solicitud,
+  ec.Estado_proceso,
+  ec.Estado, 
+  ec.Fecha_caratulacion,
+  ec.Usuario_actual, 
+  ec.Sector_actual,
+  ec.Reparticion_Actual,
+  SUBSTRING_INDEX(ec.reparticion_actual, '-', 1) AS acronimo_reparticion,
+  ec.Fecha_Ultimo_Pase,
+  ec.Tipo_de_tramite,
+  ec.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC,
+  ec.Numero_de_documento_GEDO,
+  ec.Secretaria,
+  ec.Subsecretaria,
+  ec.Direccion_General,
+  ec.Direccion,
+  ec.programa,
+  ec.Nombre_del_proceso,
+  ec.Numero_de_expediente,
+  ec.Tipo_de_proceso,
+  ec.Incluye_logistica,
+  ec.Importe_Total,
+  ec.Importe_total_moneda,
+  ec.Previsto_en_el_plan_anual_de_compras,
+  ec.Numero_de_linea_del_PAC,
+  ec.Linea_POA,
+  ec.Inciso,
+  ec.Clase,
+  ec.Rubro,
+  ec.Fuente_de_financiamiento,
+  ec.Modalidad_de_compra,
+  is_.estado,
+  is_.Fecha_Creacion_Solicitud,
+  is_.Codigo_Item,
+  is_.Precio_Unitario,
+  is_.Descripcion,
+  is_.cantidad
+FROM expedientes_de_adquisición ec
+  INNER JOIN items_solicitados is_ 
+    ON ec.Nro_solicitud LIKE CONCAT(is_.Nro_solicitud, '%')
+WHERE ec.Estado_proceso NOT IN ('desierto', 'fracasado', 'eliminado', 'dejado sin efecto')
+LIMIT 50000;
+
+
+##FALTA INCORPORAR EL STOCK Y EL CONSUMO MENSUAL PERO DESDE OTRA TABLA, PORQUE ACÁ SE DUPLICA LA INFO
+SELECT DISTINCT
+  ec.Num_de_exp,
+  ec.nro_proceso,
+  is_.Nro_solicitud,
+  is_.estado,
+  is_.Fecha_Creacion_Solicitud,
+  is_.Codigo_Item,
+  is_.Precio_Unitario,
+  is_.Descripcion,
+  is_.cantidad,
+  ec.Estado_proceso,
+  ec.Estado, 
+  ec.Fecha_caratulacion,
+  ec.Usuario_actual, 
+  ec.Sector_actual,
+  ec.Reparticion_Actual,
+  SUBSTRING_INDEX(ec.reparticion_actual, '-', 1) AS acronimo_reparticion,
+  ec.Fecha_Ultimo_Pase,
+  ec.Tipo_de_tramite,
+  ec.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC,
+  ec.Numero_de_documento_GEDO,
+  ec.Secretaria,
+  ec.Subsecretaria,
+  ec.Direccion_General,
+  ec.Direccion,
+  ec.programa,
+  ec.Nombre_del_proceso,
+  ec.Numero_de_expediente,
+  ec.Tipo_de_proceso,
+  ec.Incluye_logistica,
+  ec.Importe_Total,
+  ec.Importe_total_moneda,
+  ec.Previsto_en_el_plan_anual_de_compras,
+  ec.Numero_de_linea_del_PAC,
+  ec.Linea_POA,
+  ec.Inciso,
+  ec.Clase,
+  ec.Rubro,
+  ec.Fuente_de_financiamiento,
+  ec.Modalidad_de_compra,
+  psSCO.Consumo_mensual,
+  psSCO.Stock_disponible,
+  psSCO.Fecha,
+  psSCO.Vencimiento_stock
+FROM expedientes_de_adquisición ec
+  INNER JOIN items_solicitados is_ 
+    ON ec.Nro_solicitud LIKE CONCAT(is_.Nro_solicitud, '%')
+  INNER JOIN Productos_sin_sco psSCO ON ec.num_de_exp = psSCO.Numero_expediente_final
+LIMIT 5000;
+
+SELECT
+  ec.num_de_exp,
+  ec.nro_proceso,
+  ec.secretaria,
+  is_.nro_solicitud,
+  is_.Codigo_item,
+  psSCO.Consumo_mensual,
+  psSCO.Stock_disponible,
+  psSCO.Fecha,
+  psSCO.Vencimiento_stock
+FROM expedientes_de_adquisición ec
+  LEFT JOIN items_solicitados is_ 
+    ON ec.Nro_solicitud LIKE CONCAT(is_.Nro_solicitud, '%')
+  INNER JOIN Productos_sin_sco psSCO ON ec.num_de_exp = psSCO.Numero_expediente_final
+LIMIT 5000;
+
+
+SELECT * FROM Productos_sin_sco limit 10000;
+
+##PARA LEVANTAR EL DETALLE DE LOS PRODUCTOS SIN SCO
+
+## CLASIFICACION POR ESTADO DEL PROCESO EN LOS EXP SIN SCO:
+use adquisiciones;
+##funciona. Mejorar despues para tomar todos los acronimos de cada etapa USAR ESTA QUERY Y COMPARARLA CON EL RESULTADO DE LA CONSULTA DE ARRIBA
+WITH max_orden AS (
+  SELECT ec.num_de_exp, MAX(dve.Orden) AS max_orden
+  FROM expedientes_de_adquisición ec
+  LEFT JOIN Documentos_vinculados_a_expedientes dve ON ec.num_de_exp = dve.expediente
+  WHERE dve.Acronimo IN (
+    SELECT Acronimo
+    FROM Documentos_vinculados_a_expedientes
+    WHERE Acronimo LIKE '%CAREX%' OR Acronimo LIKE '%PLIEG%' OR Acronimo LIKE '%fowmc%'
+       OR Acronimo LIKE '%BOFIC%' OR Acronimo LIKE '%PUCON%' 
+       OR Acronimo LIKE '%ACFO%' OR Acronimo LIKE '%IFGRA%' 
+       OR Acronimo LIKE '%NOTIF%' OR Acronimo LIKE '%INFFC%' 
+       OR Acronimo LIKE '%PDISP%' OR Acronimo LIKE '%DICJU%' OR Acronimo LIKE '%orpa%' 
+       OR Acronimo LIKE '%DI%' OR Acronimo LIKE '%PRESO%' 
+       OR Acronimo LIKE '%ORCOM%' OR Acronimo LIKE '%CONTR%'
+  )
+  GROUP BY ec.num_de_exp
+)
+SELECT 
+  ec.num_de_exp,
+  dve.Acronimo,
+  dve.orden, 
+  COALESCE(
+    CASE 
+      WHEN dve.Acronimo LIKE '%CAREX%' OR dve.Acronimo LIKE '%PLIEG%' OR dve.Acronimo LIKE '%FOWMC%' OR dve.Acronimo LIKE '%PBCP%' OR dve.Acronimo LIKE '%PLIET%' THEN 'Ingresado'
+      WHEN dve.Acronimo LIKE '%BOFIC%' OR dve.Acronimo LIKE '%PUCON%' OR dve.Acronimo LIKE '%CICOA%' THEN 'Publicacion o invitacion'
+      WHEN dve.Acronimo LIKE '%ACFO%' OR dve.Acronimo LIKE '%AA%' THEN 'En apertura'
+      WHEN dve.Acronimo LIKE '%DE%' OR dve.Acronimo LIKE '%DEFC%' THEN 'En evaluacion'
+      WHEN dve.Acronimo LIKE "%PDISP%" OR dve.Acronimo LIKE "%DICJU%" THEN 'Preadjudicado'
+      WHEN dve.Acronimo LIKE '%DI%' OR dve.Acronimo LIKE '%PRESO%' OR dve.Acronimo LIKE '%OCA%' THEN 'Adjudicado'
+      WHEN dve.Acronimo LIKE '%ORCOM%' OR dve.Acronimo LIKE '%CONTR%' THEN 'Perfeccionamiento de contrato'
+    END,
+    'Desconocido'
+  ) AS columna_Estado_proceso
+FROM expedientes_de_adquisición ec
+LEFT JOIN Documentos_vinculados_a_expedientes dve ON ec.num_de_exp = dve.expediente
+JOIN max_orden mo ON ec.num_de_exp = mo.num_de_exp AND dve.Orden = mo.max_orden
+ORDER BY ec.num_de_exp, dve.Orden
+LIMIT 1500000;
+
+
+#ULTIMO CRUCE PARA LEVANTAR LOS PRODUCTOS SIN SCO
+SELECT * FROM productos_sin_sco LIMIT 5000;
+
+use adquisiciones;
+
+#USAR ESTA 28/10
+SELECT DISTINCT
+  ec.Num_de_exp,
+  ec.nro_proceso,
+  ec.Estado, 
+  ec.Fecha_caratulacion,
+  ec.Usuario_actual, 
+  ec.Sector_actual,
+  ec.Reparticion_Actual,
+  SUBSTRING_INDEX(ec.reparticion_actual, ' -', 1) AS acronimo_reparticion,
+  ec.Fecha_Ultimo_Pase,
+  ec.Tipo_de_tramite,
+  ec.Expediente_donde_se_encuentra_vinculado_el_formulario_FOWMC,
+  ec.Numero_de_documento_GEDO,
+  ec.Secretaria,
+  ec.Subsecretaria,
+  ec.Direccion_General,
+  ec.Direccion,
+  ec.programa,
+  ec.Nombre_del_proceso,
+  ec.Numero_de_expediente,
+  ec.Tipo_de_proceso,
+  ec.Incluye_logistica,
+  ec.Importe_Total,
+  ec.Importe_total_moneda,
+  ec.Previsto_en_el_plan_anual_de_compras,
+  ec.Numero_de_linea_del_PAC,
+  ec.Linea_POA,
+  ec.Inciso,
+  ec.Clase,
+  ec.Rubro,
+  ec.Fuente_de_financiamiento,
+  ec.Modalidad_de_compra,
+  ec.nro_solicitud,
+  psSCO.Codigo_Item,
+  COALESCE(TRIM(psSCO.Descripcion), ' ') AS Descripcion,
+  psSCO.cantidad,
+  psSCO.Precio_Unitario,
+  psSCO.Fecha_Creacion_SCO,
+  psSCO.Precio_renglon,
+  psSCO.consumo_mensual,
+  psSCO.Stock_disponible,
+  psSCO.Fecha,
+  psSCO.Vencimiento_stock
+FROM expedientes_de_adquisición ec
+  INNER JOIN productos_sin_sco psSCO ON ec.Num_de_exp = psSCO.Numero_expediente_final
+WHERE ec.nro_proceso = 'NO_COMPRAR'
+LIMIT 50000;
+
+SELECT * FROM expedientes_de_adquisición;
+
+##Para estimar los dias del proceso
+use adquisiciones;
+##USAR ESTE CODIGOO DESDE EL 1/11, se corre por año
+WITH max_orden AS (
+  SELECT ec.num_de_exp, MAX(dvec.Orden) AS max_orden FROM expedientes_de_adquisición ec
+  LEFT JOIN Documentos_vinculados_a_expedientes_de_compras dvec ON ec.num_de_exp = dvec.expediente
+  WHERE dvec.Acronimo IN (
+    SELECT Acronimo
+    FROM Documentos_vinculados_a_expedientes_de_compras
+    WHERE Acronimo LIKE '%AA%' OR Acronimo LIKE '%CAREX%' 
+       OR Acronimo LIKE '%PBCP%' OR Acronimo LIKE '%PLIET%'
+       OR Acronimo LIKE '%CICOA%' OR Acronimo LIKE '%DE%'
+       OR Acronimo LIKE '%DEFC%'
+       OR Acronimo LIKE '%PLIEG%' OR Acronimo LIKE '%FOWMC%'
+       OR Acronimo LIKE '%BOFIC%' OR Acronimo LIKE '%PUCON%' 
+       OR Acronimo LIKE '%ACFO%'
+       OR Acronimo LIKE '%PDISP%' OR Acronimo LIKE '%DICJU%' 
+       OR Acronimo LIKE '%DI%' OR Acronimo LIKE '%PRESO%' 
+       OR Acronimo LIKE '%ORCOM%' OR Acronimo LIKE '%CONTR%' OR Acronimo LIKE '%COMPP%' OR Acronimo LIKE'%ORDPA%'
+  )
+  GROUP BY ec.num_de_exp
+)
+SELECT 
+  ec.num_de_exp,
+  dvec.Acronimo,
+  dvec.Fecha_creacion_documento,
+  dvec.Fecha_asociacion_documento,
+  dvec.orden, 
+  COALESCE(
+    CASE 
+      WHEN dvec.Acronimo LIKE '%CAREX%' OR dvec.Acronimo LIKE '%PLIEG%' OR dvec.Acronimo LIKE '%FOWMC%' OR dvec.Acronimo LIKE '%PBCP%' OR dvec.Acronimo LIKE '%PLIET%' THEN 'Inicial'
+      WHEN dvec.Acronimo LIKE '%BOFIC%' OR dvec.Acronimo LIKE '%PUCON%' OR dvec.Acronimo LIKE '%CICOA%' THEN 'Publicacion o invitacion'
+      WHEN dvec.Acronimo LIKE '%ACFO%' OR dvec.Acronimo LIKE '%AA%' THEN 'En apertura'
+      WHEN dvec.Acronimo LIKE '%DE%' OR dvec.Acronimo LIKE '%DEFC%' THEN 'En evaluacion'
+      WHEN dvec.Acronimo LIKE '%PDISP%' OR dvec.Acronimo LIKE '%DICJU%' THEN 'Preadjudicado'
+      WHEN dvec.Acronimo LIKE '%DI%' OR dvec.Acronimo LIKE '%PRESO%' OR dvec.Acronimo LIKE '%OCA%' OR dvec.Acronimo LIKE '%COMPP%' OR dvec.Acronimo LIKE '%ORDPA%' THEN 'Adjudicado'
+      WHEN dvec.Acronimo LIKE '%ORCOM%' OR dvec.Acronimo LIKE '%CONTR%' THEN 'Perfeccionamiento de contrato'
+    END,
+    'Desconocido'
+  ) AS columna_Estado_proceso
+FROM expedientes_de_adquisición ec
+LEFT JOIN Documentos_vinculados_a_expedientes_de_compras dvec ON ec.num_de_exp = dvec.expediente
+JOIN max_orden mo ON ec.num_de_exp = mo.num_de_exp AND dvec.Orden = mo.max_orden
+ORDER BY ec.num_de_exp, dvec.Orden
+LIMIT 150000;
+
+SELECT * FROM Documentos_vinculados_a_expedientes_de_compras limit 500000;
+USE ADQUISICIONES;
+#Sin considerar el maximo orden, sino el ultimo en el que aparezca alguno de mis acronimos mencionados (Aclaracion: funcionó corrido por partes, primero con los acronimos, luego con la clasif y ultimas las fechas):
+SELECT ec.num_de_exp, dve.acronimo, MAX(dve.Orden) AS max_orden, dve.Fecha_creacion_documento,
+  dve.Fecha_asociacion_documento, COALESCE(
+    CASE 
+      WHEN dve.Acronimo LIKE '%CAREX%' OR dve.Acronimo LIKE '%PLIEG%' OR dve.Acronimo LIKE '%FOWMC%' OR dve.Acronimo LIKE '%PBCP%' OR dve.Acronimo LIKE '%PLIET%' THEN 'Ingresado'
+      WHEN dve.Acronimo LIKE '%BOFIC%' OR dve.Acronimo LIKE '%PUCON%' OR dve.Acronimo LIKE '%CICOA%' THEN 'Publicacion o invitacion'
+      WHEN dve.Acronimo LIKE '%ACFO%' OR dve.Acronimo LIKE '%AA%' THEN 'En apertura'
+      WHEN dve.Acronimo LIKE '%DE%' OR dve.Acronimo LIKE '%DEFC%' THEN 'En evaluacion'
+      WHEN dve.Acronimo LIKE '%PDISP%' OR dve.Acronimo LIKE '%DICJU%' THEN 'Preadjudicado'
+      WHEN dve.Acronimo LIKE '%DI%' OR dve.Acronimo LIKE '%PRESO%' OR dve.Acronimo LIKE '%OCA%' OR dve.Acronimo LIKE '%COMPP%' OR dve.Acronimo LIKE '%ORDPA%' THEN 'Adjudicado'
+      WHEN dve.Acronimo LIKE '%ORCOM%' OR dve.Acronimo LIKE '%CONTR%' THEN 'Perfeccionamiento de contrato'
+    END,
+    'Desconocido'
+  ) AS columna_Estado_proceso FROM expedientes_de_adquisición ec
+  LEFT JOIN (
+    SELECT 
+      expediente,
+      Acronimo,
+      Orden,
+      Fecha_creacion_documento,
+      Fecha_asociacion_documento,
+      ROW_NUMBER() OVER (PARTITION BY expediente ORDER BY Orden DESC) AS row_num
+    FROM 
+      Documentos_vinculados_a_expedientes
+  ) dve ON ec.num_de_exp = dve.expediente AND dve.row_num = 1
+GROUP BY num_de_exp
+LIMIT 15000;
+
+
+SELECT 
+  ec.num_de_exp,
+  dve.acronimo,
+  dve.Orden AS max_orden,
+  dve.Fecha_creacion_documento,
+  dve.Fecha_asociacion_documento,
+  COALESCE(
+    CASE 
+      WHEN dve.Acronimo LIKE '%CAREX%' OR dve.Acronimo LIKE '%PLIEG%' OR dve.Acronimo LIKE '%FOWMC%' OR dve.Acronimo LIKE '%PBCP%' OR dve.Acronimo LIKE '%PLIET%' THEN 'Ingresado'
+      WHEN dve.Acronimo LIKE '%BOFIC%' OR dve.Acronimo LIKE '%PUCON%' OR dve.Acronimo LIKE '%CICOA%' THEN 'Publicacion o invitacion'
+      WHEN dve.Acronimo LIKE '%ACFO%' OR dve.Acronimo LIKE '%AA%' THEN 'En apertura'
+      WHEN dve.Acronimo LIKE '%DE%' OR dve.Acronimo LIKE '%DEFC%' THEN 'En evaluacion'
+      WHEN dve.Acronimo LIKE "%PDISP%" OR dve.Acronimo LIKE "%DICJU%" THEN 'Preadjudicado'
+      WHEN dve.Acronimo LIKE '%DI%' OR dve.Acronimo LIKE '%PRESO%' OR dve.Acronimo LIKE '%OCA%' THEN 'Adjudicado'
+      WHEN dve.Acronimo LIKE '%ORCOM%' OR dve.Acronimo LIKE '%CONTR%' THEN 'Perfeccionamiento de contrato'
+    END,
+    'Desconocido'
+  ) AS columna_Estado_proceso
+FROM 
+  expedientes_de_adquisición ec
+  LEFT JOIN Documentos_vinculados_a_expedientes ON ec.num_de_exp = dve.expediente
+  INNER JOIN (
+    SELECT 
+      expediente,
+      MAX(Orden) AS max_orden
+    FROM 
+      Documentos_vinculados_a_expedientes
+    WHERE 
+      Acronimo IN (
+        SELECT Acronimo
+        FROM Documentos_vinculados_a_expedientes
+        WHERE Acronimo LIKE '%AA%' OR Acronimo LIKE '%CAREX%' 
+           OR Acronimo LIKE '%PBCP%' OR Acronimo LIKE '%PLIET%'
+           OR Acronimo LIKE '%CICOA%' OR Acronimo LIKE '%DE%'
+           OR Acronimo LIKE '%DEFC%'
+           OR Acronimo LIKE '%PLIEG%' OR Acronimo LIKE '%FOWMC%'
+           OR Acronimo LIKE '%BOFIC%' OR Acronimo LIKE '%PUCON%' 
+           OR Acronimo LIKE '%ACFO%'
+           OR Acronimo LIKE '%PDISP%' OR Acronimo LIKE '%DICJU%' 
+           OR Acronimo LIKE '%DI%' OR Acronimo LIKE '%PRESO%' 
+           OR Acronimo LIKE '%ORCOM%' OR Acronimo LIKE '%CONTR%'
+      )
+    GROUP BY 
+      expediente
+  ) mo ON ec.num_de_exp = mo.expediente AND dve.Orden = mo.max_orden
+LIMIT 15000;
+
+select * from Documentos_vinculados_a_expedientes limit 500000;
+
+use adquisiciones;
+#USAR ESTA CONSULTA PARA ESTADOS (POR AÑO) 25.11
+SELECT 
+  ec.num_de_exp, 
+  MAX(dve.Acronimo) AS ultimo_acronimo,
+  MAX(dve.Orden) AS max_orden,
+  MAX(dve.Fecha_creacion_documento) AS fecha_creacion_documento,
+  MAX(dve.Fecha_asociacion_documento) AS fecha_asociacion_documento,
+  COALESCE(
+    CASE 
+      WHEN MAX(dve.Acronimo) LIKE '%CAREX%' OR MAX(dve.Acronimo) LIKE '%PLIEG%' OR MAX(dve.Acronimo) LIKE '%FOWMC%' OR MAX(dve.Acronimo) LIKE '%PBCP%' OR MAX(dve.Acronimo) LIKE '%PLIET%' THEN 'Ingresado'
+      WHEN MAX(dve.Acronimo) LIKE '%BOFIC%' OR MAX(dve.Acronimo) LIKE '%PUCON%' OR MAX(dve.Acronimo) LIKE '%CICOA%' THEN 'Publicacion o invitacion'
+      WHEN MAX(dve.Acronimo) LIKE '%ACFO%' OR MAX(dve.Acronimo) LIKE '%AA%' THEN 'En apertura'
+      WHEN MAX(dve.Acronimo) LIKE '%DE%' OR MAX(dve.Acronimo) LIKE '%DEFC%' THEN 'En evaluacion'
+      WHEN MAX(dve.Acronimo) LIKE "%PDISP%" OR MAX(dve.Acronimo) LIKE "%DICJU%" THEN 'Preadjudicado'
+      WHEN MAX(dve.Acronimo) LIKE '%DI%' OR MAX(dve.Acronimo) LIKE '%PRESO%' OR MAX(dve.Acronimo) LIKE '%OCA%' OR MAX(dve.Acronimo) LIKE '%RESOL%' OR MAX(dve.Acronimo) LIKE '%ORPA%' THEN 'Adjudicado'
+      WHEN MAX(dve.Acronimo) LIKE '%ORCOM%' OR MAX(dve.Acronimo) LIKE '%CONTR%' THEN 'Perfeccionamiento de contrato'
+    END,
+    'Desconocido'
+  ) AS columna_Estado_proceso
+FROM 
+  expedientes_de_adquisición ec
+  INNER JOIN (
+    SELECT 
+      expediente,
+      Acronimo,
+      Orden,
+      Fecha_creacion_documento,
+      Fecha_asociacion_documento,
+      ROW_NUMBER() OVER (PARTITION BY expediente ORDER BY Orden DESC) AS row_num
+    FROM 
+      Documentos_vinculados_a_expedientes_de_compras
+    WHERE 
+      Acronimo LIKE '%CAREX%' OR Acronimo LIKE '%PLIEG%' OR Acronimo LIKE '%FOWMC%' OR Acronimo LIKE '%PBCP%' OR Acronimo LIKE '%PLIET%' 
+      OR Acronimo LIKE '%BOFIC%' OR Acronimo LIKE '%PUCON%' OR Acronimo LIKE '%CICOA%' 
+      OR Acronimo LIKE '%ACFO%' OR Acronimo LIKE '%AA%' 
+      OR Acronimo LIKE '%DE%' OR Acronimo LIKE '%DEFC%' 
+      OR Acronimo LIKE '%PDISP%' OR Acronimo LIKE '%DICJU%' 
+      OR Acronimo LIKE '%DI%' OR Acronimo LIKE '%PRESO%' OR Acronimo LIKE '%OCA%' OR Acronimo LIKE '%RESOL%' 
+      OR Acronimo LIKE '%ORCOM%' OR Acronimo LIKE '%CONTR%'
+  ) dve ON ec.num_de_exp = dve.expediente AND dve.row_num = 1
+GROUP BY 
+  ec.num_de_exp
+LIMIT 500000;
+
+
+#VOLVER A CARGAR LA TABLA PRODUCTO DE LA CONSULTA ANTERIOR
+
+use adquisiciones;
+
+LOAD DATA INFILE 'D:\\xampp\\mysql\\data\\ESTADO PROCESOS.csv'
+INTO TABLE ESTADO_PROCESOS
+CHARACTER SET utf8
+FIELDS TERMINATED BY ';'
+ENCLOSED BY '\"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+SELECT * from ESTADO_PROCESOS limit 1500;
+
+SELECT 
+   num_de_exp,
+   columna_estado_proceso,
+    CASE 
+        WHEN columna_Estado_proceso = 'Adjudicado' THEN dias_procesamiento - (SELECT dias_procesamiento FROM ESTADO_PROCESOS WHERE columna_Estado_proceso = 'Preadjudicado' LIMIT 1)
+        WHEN columna_Estado_proceso = 'Perfeccionamiento de contrato' THEN dias_procesamiento - (SELECT dias_procesamiento FROM ESTADO_PROCESOS WHERE columna_Estado_proceso = 'Preadjudicado' LIMIT 1)
+        WHEN columna_Estado_proceso = 'Preadjudicado' THEN dias_procesamiento - (SELECT dias_procesamiento FROM ESTADO_PROCESOS WHERE columna_Estado_proceso = 'En evaluacion' LIMIT 1)
+        WHEN columna_Estado_proceso = 'En Evaluacion' THEN dias_procesamiento - (SELECT dias_procesamiento FROM ESTADO_PROCESOS WHERE columna_Estado_proceso = 'En Apertura' LIMIT 1)
+        WHEN columna_Estado_proceso = 'En Apertura' THEN dias_procesamiento - (SELECT dias_procesamiento FROM ESTADO_PROCESOS WHERE columna_Estado_proceso = 'Publicado' LIMIT 1)
+        ELSE 0 -- O puedes usar NULL o 0 según prefieras
+    END AS resultado
+FROM ESTADO_PROCESOS
+WHERE columna_Estado_proceso = 'Adjudicado' OR 
+      columna_Estado_proceso = 'Perfeccionamiento de contrato' OR 
+      columna_Estado_proceso = 'Preadjudicado' OR 
+      columna_Estado_proceso = 'En Evaluacion' OR 
+      columna_Estado_proceso = 'En Apertura';
+
+use adquisiciones;
+
+
+SELECT DISTINCT
+   ec.num_de_exp,
+   ec.fecha_caratulacion,
+   dve.acronimo,
+   dve.Usuario_creador_documento,
+   dve.fecha_creacion_documento,
+   dve.orden
+FROM 
+   expedientes_de_adquisición ec
+INNER JOIN 
+   Documentos_vinculados_a_expedientes_de_compras dve ON ec.num_de_exp = dve.expediente
+WHERE 
+   dve.acronimo LIKE '%CAREX%' OR 
+   dve.acronimo LIKE '%PLIEG%' OR 
+   dve.acronimo LIKE '%FOWMC%' OR 
+   dve.acronimo LIKE '%PBCP%' OR 
+   dve.acronimo LIKE '%PLIET%' OR 
+   dve.acronimo LIKE '%BOFIC%' OR 
+   dve.acronimo LIKE '%PUCON%' OR 
+   dve.acronimo LIKE '%CICOA%' OR 
+   dve.acronimo LIKE '%ACFO%' OR 
+   dve.acronimo LIKE '%AA%' OR 
+   dve.acronimo LIKE '%DE%' OR 
+   dve.acronimo LIKE '%DEFC%' OR 
+   dve.acronimo LIKE '%PDISP%' OR 
+   dve.acronimo LIKE '%DICJU%' OR 
+   dve.acronimo LIKE '%DI%' OR 
+   dve.acronimo LIKE '%PRESO%' OR 
+   dve.acronimo LIKE '%OCA%' OR 
+   dve.acronimo LIKE '%RESOL%' OR 
+   dve.acronimo LIKE '%ORCOM%' OR 
+   dve.acronimo LIKE '%CONTR%'
+LIMIT 15000;
