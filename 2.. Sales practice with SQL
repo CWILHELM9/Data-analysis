@@ -1,0 +1,120 @@
+QUERY SQLLite
+SELECT * FROM ventas;
+
+--Eliminamos los datos duplicados
+CREATE TABLE ventas2 AS
+SELECT *
+FROM ventas
+group by id_vendedor, id_prod, periodo;
+select * from ventas2;
+drop table ventas;
+alter table ventas2 rename to ventas;
+
+--Top 10 de vendedores
+SELECT v.nombre, ve.id_vendedor, sum(ve.unidades) as total_unidades
+FROM vendedores v
+JOIN ventas ve ON v.id = ve.id_vendedor
+GROUP BY v.nombre, ve.id_vendedor
+ORDER BY total_unidades DESC
+LIMIT 10;
+
+ 
+----Variación de ventas por vendedor
+SELECT 
+      v.nombre, 
+      sum(case when ve.periodo = 202203 THEN ve.unidades ELSE 0 END) as periodo_202203,
+      sum(case when ve.periodo = 202202 THEN ve.unidades ELSE 0 END) AS periodo_202202,
+      sum(CASE WHEN ve.periodo = 202203 then ve.unidades else 0 END) - 
+      sum(case when ve.periodo = 202202 then ve.unidades else 0 end) as Diferencia
+FROM vendedores v
+JOIN ventas ve ON v.id = ve.id_vendedor
+group by v.nombre;
+
+Creamos la tabla provincias que no estaba incluida en nuestra BD
+CREATE TABLE 'provincias3' ('id' INTEGER,'provincia' TEXT,'capital' TEXT);
+INSERT INTO 'provincias3' ('id','provincia','capital') VALUES 
+ ('1','BUENOS AIRES','LA PLATA'), 
+ ('1','BUENOS AIRES','-'), 
+ ('1','CABA','-'), 
+ ('2','CATAMARCA','SAN FERNANDO DEL VALLE DE CATAMARCA'), 
+ ('3','CHACO','RESISTENCIA'), 
+ ('4','CHUBUT','RAWSON'), 
+ ('5','CÓRDOBA','CÓRDOBA'), 
+ ('6','CORRIENTES','CORRIENTES'), 
+ ('7','ENTRE RÍOS','PARANÁ'), 
+ ('8','FORMOSA','FORMOSA'), 
+ ('9','JUJUY','SAN SALVADOR DE JUJUY'), 
+ ('10','LA PAMPA','SANTA ROSA'), 
+ ('11','LA RIOJA','LA RIOJA'), 
+ ('12','MENDOZA','MENDOZA'), 
+ ('13','MISIONES','POSADAS'), 
+ ('14','NEUQUÉN','NEUQUÉN'), 
+ ('15','RÍO NEGRO','VIEDMA'), 
+ ('16','SALTA','SALTA'), 
+ ('17','SAN JUAN','SAN JUAN'), 
+ ('18','SAN LUIS','SAN LUIS'), 
+ ('19','SANTA CRUZ','RÍO GALLEGOS'), 
+ ('20','SANTA FE','SANTA FE'), 
+ ('20','ROSARIO','A'), 
+ ('21','SANTIAGO DEL ESTERO','SANTIAGO DEL ESTERO'), 
+ ('22','TIERRA DEL FUEGO, ANTÁRTIDA E ISLAS DEL ATLÁNTICO SUR','USHUAIA'), 
+ ('23','TUCUMÁN','SAN MIGUEL DE TUCUMÁN'), 
+ ('24','CIUDAD AUTÓNOMA DE BUENOS AIRES','CIUDAD AUTÓNOMA DE BUENOS AIRES');
+
+drop table provincias;
+
+alter table provincias3 rename to provincias;
+
+
+
+ 
+--Vendedores cordobeces con mas de 200 perfumes vendidos
+SELECT
+       ve.id_vendedor,
+       p.provincia,
+       ve.id_categoria,
+       SUM(ve.suma_de_unidades) AS total_de_unidades
+FROM ventas ve
+JOIN vendedores ven on ven.id = ve.id_vendedor
+JOIn provincias p ON p.id = ven.id_provincia
+WHERE
+      p.provincia = 'CÓRDOBA'
+      and ve.id_categoria = 'B01'
+GROUP BY 
+    ve.id_vendedor, p.id, p.provincia
+HAVING 
+    total_de_unidades > 200;
+
+
+
+--Analizar las 5 provincias con menos cantidad de ventas por año
+ select * from provincias;
+ update provincias set id = '1' WHere id = '1-1';
+ update provincias set id = '20' WHere id = '20-1';
+ update provincias set provincia = 'SANTA FE' WHere PROVINCIA = 'ROSARIO';
+ update provincias set provincia = 'CABA' WHere PROVINCIA = 'CIUDAD AUTÓNOMA DE BUENOS AIRES';
+
+--Extrae los primeros 4 caracteres de string periodo
+ALTER TABLE VENTAS ADD COLUMN ANIO INT;
+UPDATE VENTAS SET ANIO = CAST(SUBSTRING(PERIODO, 1, 4) AS INT);
+
+drop PROCEDURE provinciasmenoresventas;
+DELIMITER //
+CREATE PROCEDURE ProvinciasMenoresVentas (in ANIO_param int)
+BEGIN
+        Select sum(ve.suma_de_unidades) as cantidades_vendidas,
+          p.id,
+          p.provincia
+    from ventas ve
+    JOIN vendedores ven on ven.id = ve.id_vendedor
+    JOIn provincias p ON p.id = ven.id_provincia
+    WHERE anio = anio_param
+    group by p.id, p.provincia
+    order by ve.suma_de_unidades asc
+    LIMIT 5;
+
+END //
+DELIMITER;
+
+call ProvinciasMenoresVentas(2022);
+
