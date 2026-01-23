@@ -1,0 +1,57 @@
+---EDA Churn credit---
+
+library(openxlsx)
+library(ggplot2)
+library(DataExplorer)
+library(liver)
+
+#Conociendo la estructura de los datos
+DataExplorer::introduce(churnCredit)
+head(churnCredit, 5)
+summary(churnCredit)
+
+###Es una muestra bastante pareja en genero, pero son mayoría de mujeres, con alta formación universitaria,
+###mayormente casadas, y de ingresos inferiores a los $40 mil, sin consumos suntuosos, aunque hay casos excepcionales (outliers),
+###y que son clientes estables, que permanencen en el banco mas de 3 años.
+
+
+plot(churnCredit$income, plot.type = 1, col = 'lightblue')
+plot(churnCredit$churn, plot.type = 1, col = 'lightblue')
+
+###"churn" es una variable tabular y está fuertemente desbalanceada###
+###Para pensar un Random Forest
+
+#Solo columnas nuemricas para correlcionarlas
+numeric_cols <- sapply(churnCredit, is.numeric)
+datos_numericos <- churnCredit[, numeric_cols, drop = FALSE]
+
+# Calcular correlación omitiendo NAs
+matriz_cor <- cor(datos_numericos, use = "complete.obs")
+
+# Matriz de correlacion y autocorrelacion
+corrplot::corrplot(matriz_cor,
+                   number.cex = 1,
+                   method = "color",
+                   type = "upper",
+                   tl.col = "black",
+                   tl.srt = 45,
+                   mar = c(3, 2, 2, 0))
+
+#Hay una correlación negativa en el ratio de utilización del crédito y el limite del credito o la disponibilidad
+#y tambien hay una correlación positiva marcada entre la edad y los años de permanencia en la compañia.**
+###Para pensar efectos en posibles regresiones
+
+##Grafico variables con churn(no es causalidad, solo analisis de correlaciones)
+
+churnCredit$churn_numeric <- ifelse(churnCredit$churn == "yes", 1, 
+                                    ifelse(churnCredit$churn == "no", 0, NA))
+
+####¡¡¡Hallazgos importantes!!!
+###Cuando se vuelve a correr la matriz de correlación con churn_numeric se encuentra
+##una correlacion negativa con la cantidad de transacciones en el ultimo año, ademas de que se distancian los consumos del primer cuartil (consumos mas caros) y
+#una correlacion positiva con la cantidad de meses de meses inactivos.
+
+##Para comprender el set de datos se estiman los componentes principales de la matriz
+datos_completos <- na.omit(datos_numericos)
+pca_result <- prcomp(datos_completos, scale. = TRUE)
+list.pca_result
