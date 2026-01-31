@@ -1,0 +1,259 @@
+install.packages("randomForest", "rpart", "rpart.plot")
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(openxlsx)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(DataExplorer)
+
+#Carga de datos
+datos = read.xlsx(file.choose(), sheet=1)
+datos
+
+#Transformación y limpieza
+
+datos <- datos[, -1]
+na.omit(datos)
+
+datos$CBT <- as.numeric(datos$CBT)
+datos$M2_costo <- as.numeric(datos$M2_costo)
+
+#Dityverse para convertir mi variable Existe_ahorro en tabular
+datos <- datos %>%
+  mutate(Existe_ahorro = factor(Existe_ahorro))
+
+
+#Descripción general del dataset
+
+head.10(datos$CBT)
+summary(datos)
+
+
+#Ploteo de salarios y correlacion de series
+Series_salarios <- cbind(datos$Ingreso_medio_eph, datos$RIPTE)
+plot.ts(Series_salarios, main="Comportamiento series RIPTE y Salario medio EPH 2003-2025", xlab = "Tiempo", ylab = "Valor")
+
+Corr_RIPTE_EPH <- cor.test(datos$RIPTE, datos$Ingreso_medio_eph)
+datos$Ingreso_medio_eph <- as.numeric(datos$Ingreso_medio_eph)
+
+Corr_RIPTE_EPH
+
+
+
+#Comportamiento de la inflación
+
+Series_inflacion <- cbind(datos$CPI.diario, datos$Serie.IPC)
+plot.ts(Series_inflacion, main="Comportamiento series IPC y CPI 1996 - 2025", xlab = "Tiempo", ylab = "Valor")
+
+
+#Comportamiento alquileres
+Serie_alquiler_ingreso <- cbind(datos$Alquileres_GBA, datos$Ingreso_medio_eph)
+plot.ts(Serie_alquiler_ingreso, main="Comportamiento alquileres y salario 2003 - 2025", xlab = "Tiempo", ylab = "Valor")
+Corr_Alquileres_Ingreso_EPH <- cor.test(datos$Ingreso_medio_eph, datos$Alquileres_GBA)
+Corr_Alquileres_Ingreso_EPH
+Corr_Alquileres_RIPTE <- cor.test(datos$RIPTE, datos$Alquileres_GBA)
+Corr_Alquileres_RIPTE
+#No se comporta como el precio del m2
+Serie_alquiler_m2 <- cbind(datos$Alquileres_GBA, datos$Precio_PBA)
+plot.ts(Serie_alquiler_m2)
+
+#Comportamiento precio m2
+Series_m2_<- cbind(datos$Precio_PBA, datos$Ahorro)
+plot.ts(Series_m2_)
+Corr_M2_ahorro <- cor.test(datos$Precio_PBA, datos$Ahorro)
+Corr_M2_ahorro #Unica correlacion razonable, está rara la serie de precios en PBA
+Serie_precios_M2_CABA_EPH <- cbind(datos$Precio_CABA, datos$Ingreso_medio_eph)
+plot.ts(Serie_precios_M2_CABA_EPH)
+Corr_M2_ingreso_EPH <- cor.test(datos$Precio_CABA, datos$Ingreso_medio_eph)
+Corr_M2_ingreso_EPH
+Corr_M2_ahorro_CABA <- cor.test(datos$Precio_CABA, datos$Ahorro)
+Corr_M2_ahorro_CABA #Altisima
+
+#Comportamiento Crédito
+Series_monto_cred <- cbind(datos$Monto_crédito_hipot, datos$Ingreso_medio_eph)
+plot.ts(Series_monto_cred, main="Comportamiento alquileres y salario 2003 - 2025", xlab = "Tiempo", ylab = "Valor")
+
+
+Series_ <- cbind(datos$Alquileres_GBA, datos$Ingreso_medio_eph)
+plot.ts(Series_, main="Comportamiento alquileres y salario 2003 - 2025", xlab = "Tiempo", ylab = "Valor")
+
+
+
+
+#Creo la serie de tiempo
+serie <- ts(datos, start = c(1996, 1, 1), end = c(2025, 12, 30), frequency = 360)
+class(serie)
+serie
+
+# Matriz de correlacion y autocorrelacion
+
+columnas_numericas <- sapply(datos, is.numeric)
+datos_numericos <- datos[, columnas_numericas, drop = FALSE]
+
+matriz_cor <- cor(datos_numericos, use = "pairwise.complete.obs")
+
+# Opción C: Reemplazar NAs por 0 (si es apropiado)
+matriz_cor[is.na(matriz_cor)] <- 0
+matriz_cor <- round(matriz_cor, 1)
+
+
+corrplot::corrplot(matriz_cor, 
+                   addCoef.col = "black",  
+                   number.cex = 0.7,    
+                   tl.cex = 0.7,
+                   tl.col = "black",
+                   method = "color",
+                   number.digits = 1
+                   )
+
+#Ciclo de la serie
+library(mgcv)
+
+serie_limpia <- na.omit(datos_numericos$Ahorro) #Limpia NAs columna a columna
+Ahorro <- ts(serie_limpia, start = c(2017, 4, 1), end = c(2025, 12, 30), frequency = 360)
+modeloaditivo = decompose(Ahorro)
+plot(modeloaditivo, title = "Descomposición de serie temporal ahorro")
+
+serie_limpia2 <- na.omit(datos_numericos$Precio_CABA) #Limpia NAs columna a columna
+Precio_CABA <- ts(serie_limpia2, start = c(2016, 1, 1), end = c(2025, 12, 30), frequency = 360)
+modeloaditivo = decompose(Precio_CABA)
+plot(modeloaditivo)
+
+
+
+
+------------------------------------------------------------------------------------------------------------
+  set.seed(42)
+
+# Eliminar solo filas con NA en la variable respuesta
+datos_limpios <- datos[complete.cases(datos["Existe_ahorro"]), ]
+
+# Dividir
+seleccion <- sample(1:nrow(datos_limpios), nrow(datos_limpios) * 0.7)
+training <- datos_limpios[seleccion, ]
+testing <- datos_limpios[-seleccion, ]
+
+# Opción 1: Usar na.roughfix para imputar NAs en predictores automáticamente
+rf_model <- randomForest(Existe_ahorro ~ ., 
+                         data = training,
+                         na.action = na.roughfix)  # Imputa medianas/moda
+
+# Opción 2: Imputar manualmente antes
+library(caret)
+
+# Identificar predictores con NAs
+predictores_con_na <- names(which(colSums(is.na(training)) > 0))
+
+if (length(predictores_con_na) > 0) {
+  cat("Predictores con NAs:", paste(predictores_con_na, collapse = ", "), "\n")
+  
+  # Imputar con la mediana (numéricas) o moda (categóricas)
+  preProc <- preProcess(training[, -which(names(training) == "Existe_ahorro")], 
+                        method = "medianImpute")
+  
+  training <- predict(preProc, training)
+  testing <- predict(preProc, testing)
+}
+
+# Ahora crear el modelo
+rf_model <- randomForest(Existe_ahorro ~ ., data = training)
+
+#Visualizar el resumen del modelo, podría seleccionar solo algunas varaibles
+print(rf_model)
+
+total_correct <- sum(diag(rf_model$confusion))
+total_predictions <- sum(rf_model$confusion)
+accuracy <- total_correct / total_predictions
+print(paste("Model Accuracy train:", round(accuracy, 4)))
+
+#Evaluacion del modelo
+test_predictions <- predict(rf_model, newdata = testing)
+confusion_matrix <- table(Predicted = test_predictions, Actual = testing$Existe_ahorro)
+print("Matriz de confusión de testing: ")
+print(confusion_matrix)
+
+#Calculamos la precisión del modelo
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(paste("Accuracy:", round(accuracy, 4)))
+
+
+#Obtener la improtancia de las variables del modelo Random Forest
+importance <- importance(rf_model)
+importance_df <- data.frame(Variable = rownames(importance), Importance = importance[, 1])
+
+#Ordenar las varaibles por importancia de forma descendente
+importance_df <- importance_df[order(-importance_df$Importance), ]
+
+#Mostrar las 5 mejores variables
+top_variables <- head(importance_df, 5)
+print(top_variables)
+
+
+#Crear el modelo de Random Forest con las top_varialbes
+rf_model_top <- randomForest(Existe_ahorro ~ CBT + TC.AE.3500 + Precio_PBA + Monto_crédito_hipot, data = training)
+
+#Visualizar el resumen del nuevo modelo
+print(rf_model_top)
+
+#Predecir con el conjunto de prueba utilziando el nuevo modelo
+predictions_top <- predict(rf_model_top, testing)
+
+#Evaluacion del modelo nuevo
+confusion_matrix_top <- table(predictions_top, testing$Existe_ahorro)
+print(confusion_matrix_top)
+
+#Calculamos la precisión del modelo nuevo
+accuracy_top <- sum(diag(confusion_matrix_top)) / sum(confusion_matrix_top)
+print(paste("Accuracy (New Model):", round(accuracy_top, 4)))
+
+
+
+#Creo el shiny para jugar con parámetros
+library(shiny)
+library(randomForest)
+
+ui <- fluidPage(
+  titlePanel("Predicción de Ahorro"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("CBT", "CBT:", value = 1000),
+      numericInput("TC", "Tipo Cambio:", value = 500),
+      numericInput("Precio_PBA", "Precio PBA:", value = 15000),
+      numericInput("Monto", "Monto Crédito:", value = 1000000),
+      actionButton("predecir", "Predecir")
+    ),
+    
+    mainPanel(
+      h3("Resultado:"),
+      textOutput("resultado")
+    )
+  )
+)
+
+server <- function(input, output) {
+  
+  observeEvent(input$predecir, {
+    # Crear datos de entrada
+    nuevos_datos <- data.frame(
+      CBT = input$CBT,
+      TC.AE.3500 = input$TC,
+      Precio_PBA = input$Precio_PBA,
+      Monto_crédito_hipot = input$Monto
+    )
+    
+    # Predecir
+    pred <- predict(rf_model_top, nuevos_datos)
+    
+    output$resultado <- renderText({
+      paste("La predicción es:", pred)
+    })
+  })
+}
+
+shinyApp(ui = ui, server = server)
+
+app <- shinyApp(ui = ui, server = server)
+runApp(app)
