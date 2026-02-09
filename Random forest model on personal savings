@@ -25,52 +25,6 @@ datos <- datos %>%
   mutate(Existe_ahorro = factor(Existe_ahorro))
 
 
-#Descripción general del dataset
-
-head.10(datos$CBT)
-summary(datos)
-
-
-#Ploteo de salarios y correlacion de series
-Series_salarios <- cbind(datos$Ingreso_medio_eph, datos$RIPTE)
-plot.ts(Series_salarios, main="Comportamiento series RIPTE y Salario medio EPH 2003-2025", xlab = "Tiempo", ylab = "Valor")
-
-Corr_RIPTE_EPH <- cor.test(datos$RIPTE, datos$Ingreso_medio_eph)
-datos$Ingreso_medio_eph <- as.numeric(datos$Ingreso_medio_eph)
-
-Corr_RIPTE_EPH
-
-
-
-#Comportamiento de la inflación
-
-Series_inflacion <- cbind(datos$CPI.diario, datos$Serie.IPC)
-plot.ts(Series_inflacion, main="Comportamiento series IPC y CPI 1996 - 2025", xlab = "Tiempo", ylab = "Valor")
-
-
-#Comportamiento alquileres
-Serie_alquiler_ingreso <- cbind(datos$Alquileres_GBA, datos$Ingreso_medio_eph)
-plot.ts(Serie_alquiler_ingreso, main="Comportamiento alquileres y salario 2003 - 2025", xlab = "Tiempo", ylab = "Valor")
-Corr_Alquileres_Ingreso_EPH <- cor.test(datos$Ingreso_medio_eph, datos$Alquileres_GBA)
-Corr_Alquileres_Ingreso_EPH
-Corr_Alquileres_RIPTE <- cor.test(datos$RIPTE, datos$Alquileres_GBA)
-Corr_Alquileres_RIPTE
-#No se comporta como el precio del m2
-Serie_alquiler_m2 <- cbind(datos$Alquileres_GBA, datos$Precio_PBA)
-plot.ts(Serie_alquiler_m2)
-
-#Comportamiento precio m2
-Series_m2_<- cbind(datos$Precio_PBA, datos$Ahorro)
-plot.ts(Series_m2_)
-Corr_M2_ahorro <- cor.test(datos$Precio_PBA, datos$Ahorro)
-Corr_M2_ahorro #Unica correlacion razonable, está rara la serie de precios en PBA
-Serie_precios_M2_CABA_EPH <- cbind(datos$Precio_CABA, datos$Ingreso_medio_eph)
-plot.ts(Serie_precios_M2_CABA_EPH)
-Corr_M2_ingreso_EPH <- cor.test(datos$Precio_CABA, datos$Ingreso_medio_eph)
-Corr_M2_ingreso_EPH
-Corr_M2_ahorro_CABA <- cor.test(datos$Precio_CABA, datos$Ahorro)
-Corr_M2_ahorro_CABA #Altisima
-
 #Comportamiento Crédito
 Series_monto_cred <- cbind(datos$Monto_crédito_hipot, datos$Ingreso_medio_eph)
 plot.ts(Series_monto_cred, main="Comportamiento alquileres y salario 2003 - 2025", xlab = "Tiempo", ylab = "Valor")
@@ -106,7 +60,7 @@ corrplot::corrplot(matriz_cor,
                    tl.col = "black",
                    method = "color",
                    number.digits = 1
-                   )
+)
 
 #Ciclo de la serie
 library(mgcv)
@@ -192,7 +146,7 @@ print(top_variables)
 
 
 #Crear el modelo de Random Forest con las top_varialbes
-rf_model_top <- randomForest(Existe_ahorro ~ CBT + TC.AE.3500 + Precio_PBA + Monto_crédito_hipot, data = training)
+rf_model_top <- randomForest(Existe_ahorro ~ CBT + TC.AE.3500 + Serie.IPC + Monto_crédito_hipot, data = training)
 
 #Visualizar el resumen del nuevo modelo
 print(rf_model_top)
@@ -215,13 +169,13 @@ library(shiny)
 library(randomForest)
 
 ui <- fluidPage(
-  titlePanel("Predicción de Ahorro"),
+  titlePanel("Predicción de capacidad de ahorro"),
   
   sidebarLayout(
     sidebarPanel(
       numericInput("CBT", "CBT:", value = 1000),
       numericInput("TC", "Tipo Cambio:", value = 500),
-      numericInput("Precio_PBA", "Precio PBA:", value = 15000),
+      numericInput("Serie.IPC", "Serie.IPC:", value = 15000),
       numericInput("Monto", "Monto Crédito:", value = 1000000),
       actionButton("predecir", "Predecir")
     ),
@@ -240,7 +194,7 @@ server <- function(input, output) {
     nuevos_datos <- data.frame(
       CBT = input$CBT,
       TC.AE.3500 = input$TC,
-      Precio_PBA = input$Precio_PBA,
+      Serie.IPC = input$Serie.IPC,
       Monto_crédito_hipot = input$Monto
     )
     
